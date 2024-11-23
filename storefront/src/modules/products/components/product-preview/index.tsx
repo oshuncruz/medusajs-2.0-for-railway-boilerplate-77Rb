@@ -124,10 +124,10 @@ export default function ProductPreview({
 
   // Get product price
   const { cheapestPrice } = getProductPrice({
-    product: product!,
-    region: region!,
+    product: pricedProduct,
+    region,
   });
-
+  
   // Update options when user selects an option
   const updateOptions = (update: Record<string, string | undefined>) => {
     setOptions({ ...options, ...update });
