@@ -6,7 +6,7 @@ import { HttpTypes } from "@medusajs/types";
 import { addToCart } from "@lib/data/cart";
 import { getProductPrice } from "@lib/util/get-product-price";
 import Thumbnail from "../thumbnail";
-import OptionSelect from "@modules/products/components/product-actions/option-select";
+import OptionSelect from "@modules/products/components/option-select";
 import Divider from "@modules/common/components/divider";
 
 type ProductPreviewProps = {
@@ -24,7 +24,6 @@ export default function ProductPreview({
   const [isAdding, setIsAdding] = useState(false);
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
 
-  // Fetch full product details if needed
   useEffect(() => {
     const fetchProduct = async () => {
       const productData = await fetch(`/store/products/${productPreview.id}`).then(
@@ -37,7 +36,7 @@ export default function ProductPreview({
   }, [productPreview.id]);
 
   useEffect(() => {
-    if (!product) return;
+    if (!product?.options) return;
 
     const initialOptions: Record<string, string | undefined> = {};
     product.options.forEach((option) => {
@@ -47,14 +46,11 @@ export default function ProductPreview({
     setOptions(initialOptions);
   }, [product]);
 
-  const variants = product?.variants || [];
-  const selectedVariant = useMemo(() => {
-    if (!variants.length) return null;
+  const variants = useMemo(() => product?.variants || [], [product]);
 
+  const selectedVariant = useMemo(() => {
     return variants.find((variant) =>
-      variant.options.every(
-        (opt) => options[opt.option_id] === opt.value
-      )
+      variant.options.every((opt) => options[opt.option_id] === opt.value)
     );
   }, [options, variants]);
 
@@ -83,7 +79,6 @@ export default function ProductPreview({
 
   return (
     <div className="group">
-      {/* Product Thumbnail and Basic Info */}
       <div>
         <Thumbnail
           thumbnail={productPreview.thumbnail}
@@ -94,8 +89,7 @@ export default function ProductPreview({
         {cheapestPrice && <Text>{cheapestPrice}</Text>}
       </div>
 
-      {/* Options for Variants */}
-      {product.options.length > 0 && (
+      {product.options && (
         <div className="mt-4">
           {product.options.map((option) => (
             <OptionSelect
@@ -112,7 +106,6 @@ export default function ProductPreview({
         </div>
       )}
 
-      {/* Add to Cart Button */}
       <Button
         onClick={handleAddToCart}
         disabled={!inStock || !selectedVariant || isAdding}
