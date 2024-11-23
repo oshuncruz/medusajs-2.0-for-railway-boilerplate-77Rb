@@ -5,12 +5,11 @@ import { Text, Button } from "@medusajs/ui";
 import { HttpTypes } from "@medusajs/types";
 import { isEqual } from "lodash";
 import { useParams } from "next/navigation";
-import { getProductPrice } from "@lib/util/get-product-price";
+import { addToCart } from "@lib/data/cart";
 import Thumbnail from "../thumbnail";
-import ProductPrice from "../product-price";
+import ProductPrice from "../product-price"; // Ensure this path is correct
 import OptionSelect from "@modules/products/components/product-actions/option-select";
 import Divider from "@modules/common/components/divider";
-import { addToCart } from "@lib/data/cart";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
 
 type ProductPreviewProps = {
@@ -72,7 +71,6 @@ export default function ProductPreview({
       const temp: Record<string, string> = {};
 
       for (const option of variant.options) {
-        // Use option.id as the key
         temp[option.option_id || option.id] = option.value;
       }
 
