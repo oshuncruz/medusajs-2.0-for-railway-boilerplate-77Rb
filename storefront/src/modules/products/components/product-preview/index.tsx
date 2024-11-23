@@ -1,33 +1,21 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Button, Text } from "@medusajs/ui";
+import { Text, Button } from "@medusajs/ui";
+import { HttpTypes } from "@medusajs/types";
 import { isEqual } from "lodash";
 import { useParams } from "next/navigation";
-
-import { addToCart } from "@lib/data/cart";
 import { getProductPrice } from "@lib/util/get-product-price";
 import Thumbnail from "../thumbnail";
+import PreviewPrice from "./price";
 import OptionSelect from "@modules/products/components/product-actions/option-select";
 import Divider from "@modules/common/components/divider";
-import { HttpTypes } from "@medusajs/types";
+import { addToCart } from "@lib/data/cart";
 
 type ProductPreviewProps = {
   productPreview: HttpTypes.StoreProduct;
   isFeatured?: boolean;
   region: HttpTypes.StoreRegion;
-};
-
-const optionsAsKeymap = (variantOptions: any) => {
-  return variantOptions?.reduce(
-    (acc: Record<string, string | undefined>, varopt: any) => {
-      if (varopt.option && varopt.value !== null && varopt.value !== undefined) {
-        acc[varopt.option.title] = varopt.value;
-      }
-      return acc;
-    },
-    {}
-  );
 };
 
 export default function ProductPreview({
@@ -38,6 +26,7 @@ export default function ProductPreview({
   const [options, setOptions] = useState<Record<string, string | undefined>>({});
   const [isAdding, setIsAdding] = useState(false);
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
+
   const params = useParams();
   const countryCode = (params.countryCode as string) || "us"; // Adjust as needed
 
@@ -46,7 +35,7 @@ export default function ProductPreview({
     const fetchProduct = async () => {
       const response = await fetch(`/store/products/${productPreview.id}`);
       const data = await response.json();
-      setProduct(data.product); // Adjust according to your API response structure
+      setProduct(data.product); // Adjust based on your API response structure
     };
 
     fetchProduct();
@@ -54,40 +43,60 @@ export default function ProductPreview({
 
   // Initialize option state
   useEffect(() => {
-    if (!product?.variants) return;
+    if (!product) return;
 
-    if (product.variants.length === 1) {
-      const variantOptions = optionsAsKeymap(product.variants[0].options);
-      setOptions(variantOptions ?? {});
-    } else {
-      const initialOptions: Record<string, string | undefined> = {};
-      product.options?.forEach((option) => {
-        initialOptions[option.title] = undefined;
-      });
-      setOptions(initialOptions);
+    const optionObj: Record<string, string | undefined> = {};
+
+    for (const option of product.options || []) {
+      optionObj[option.id] = undefined;
     }
+
+    setOptions(optionObj);
   }, [product]);
 
-  const selectedVariant = useMemo(() => {
-    if (!product?.variants || product.variants.length === 0) {
-      return null;
+  const variants = useMemo(() => product?.variants || [], [product]);
+
+  // Map variant options for easy comparison
+  const variantRecord = useMemo(() => {
+    const map: Record<string, Record<string, string>> = {};
+
+    for (const variant of variants) {
+      if (!variant.options || !variant.id) continue;
+
+      const temp: Record<string, string> = {};
+
+      for (const option of variant.options) {
+        temp[option.option_id] = option.value;
+      }
+
+      map[variant.id] = temp;
     }
 
-    return product.variants.find((v) => {
-      const variantOptions = optionsAsKeymap(v.options);
-      return isEqual(variantOptions, options);
-    });
-  }, [product?.variants, options]);
+    return map;
+  }, [variants]);
 
-  // Update the options when a variant is selected
-  const setOptionValue = (title: string, value: string) => {
-    setOptions((prev) => ({
-      ...prev,
-      [title]: value,
-    }));
-  };
+  // Determine selected variant
+  const selectedVariant = useMemo(() => {
+    let variantId: string | undefined = undefined;
 
-  // Check if the selected variant is in stock
+    for (const key of Object.keys(variantRecord)) {
+      if (isEqual(variantRecord[key], options)) {
+        variantId = key;
+        break;
+      }
+    }
+
+    return variants.find((v) => v.id === variantId);
+  }, [options, variantRecord, variants]);
+
+  // Auto-select variant if only one exists
+  useEffect(() => {
+    if (variants.length === 1 && variants[0].id) {
+      setOptions(variantRecord[variants[0].id]);
+    }
+  }, [variants, variantRecord]);
+
+  // Determine if the variant is in stock
   const inStock = useMemo(() => {
     if (!selectedVariant) return false;
 
@@ -95,16 +104,32 @@ export default function ProductPreview({
       return true;
     }
 
-    if (selectedVariant?.allow_backorder) {
+    if ((selectedVariant.inventory_quantity ?? 0) > 0) {
       return true;
     }
 
-    if ((selectedVariant?.inventory_quantity || 0) > 0) {
+    if (selectedVariant.allow_backorder) {
       return true;
     }
 
     return false;
   }, [selectedVariant]);
+
+  // Handle early return if product data is not available
+  if (!product) {
+    return null; // Or a loading indicator
+  }
+
+  // Get product price
+  const { cheapestPrice } = getProductPrice({
+    product: product,
+    region: region,
+  });
+
+  // Update options when user selects an option
+  const updateOptions = (update: Record<string, string | undefined>) => {
+    setOptions({ ...options, ...update });
+  };
 
   const handleAddToCart = async () => {
     if (!selectedVariant?.id) {
@@ -128,42 +153,40 @@ export default function ProductPreview({
     }
   };
 
-  if (!product || !region) {
-    return null; // Or a loading indicator
-  }
-
-  const { cheapestPrice } = getProductPrice({
-    product: product!,
-    region: region!,
-  });
-
   return (
     <div className="group">
       {/* Product Thumbnail and Basic Info */}
-      <div>
-        <Thumbnail
-          thumbnail={productPreview.thumbnail}
-          size="full"
-          isFeatured={isFeatured}
-        />
-        <Text className="mt-2">{productPreview.title}</Text>
-        {cheapestPrice && <Text>{cheapestPrice}</Text>}
-      </div>
-
-      {/* Options for Variants */}
-      {(product.variants?.length ?? 0) > 1 && (
-        <div className="flex flex-col gap-y-4 mt-4">
-          {(product.options || []).map((option) => (
-            <div key={option.id}>
-              <OptionSelect
-                option={option}
-                current={options[option.title ?? ""]}
-                updateOption={setOptionValue}
-                title={option.title ?? ""}
-                disabled={isAdding}
-              />
+      <LocalizedClientLink href={`/products/${productPreview.handle}`}>
+        <div>
+          <Thumbnail
+            thumbnail={productPreview.thumbnail}
+            size="full"
+            isFeatured={isFeatured}
+          />
+          <div className="flex txt-compact-medium mt-4 justify-between">
+            <Text className="text-ui-fg-subtle">{productPreview.title}</Text>
+            <div className="flex items-center gap-x-2">
+              {cheapestPrice && <PreviewPrice price={cheapestPrice} />}
             </div>
-          ))}
+          </div>
+        </div>
+      </LocalizedClientLink>
+
+      {/* Option Selection */}
+      {product.variants.length > 1 && (
+        <div className="flex flex-col gap-y-4 mt-4">
+          {(product.options || []).map((option) => {
+            return (
+              <div key={option.id}>
+                <OptionSelect
+                  option={option}
+                  current={options[option.id]}
+                  updateOption={updateOptions}
+                  title={option.title}
+                />
+              </div>
+            );
+          })}
           <Divider />
         </div>
       )}
@@ -172,9 +195,9 @@ export default function ProductPreview({
       <Button
         onClick={handleAddToCart}
         disabled={!inStock || !selectedVariant || isAdding}
-        isLoading={isAdding}
         variant="primary"
-        className="mt-4 w-full"
+        className="mt-2 w-full"
+        isLoading={isAdding}
       >
         {!selectedVariant
           ? "Select variant"
