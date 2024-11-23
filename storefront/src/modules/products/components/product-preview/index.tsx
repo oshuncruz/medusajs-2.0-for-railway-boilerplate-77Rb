@@ -133,8 +133,8 @@ export default function ProductPreview({
   }
 
   const { cheapestPrice } = getProductPrice({
-    product,
-    region,
+    product: product!,
+    region: region!,
   });
 
   return (
