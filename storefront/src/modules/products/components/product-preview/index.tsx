@@ -1,4 +1,4 @@
-"use client";
+// product-preview/index.tsx
 
 import { useState, useEffect, useMemo } from "react";
 import { Text, Button } from "@medusajs/ui";
@@ -7,7 +7,7 @@ import { isEqual } from "lodash";
 import { useParams } from "next/navigation";
 import { addToCart } from "@lib/data/cart";
 import Thumbnail from "../thumbnail";
-import ProductPrice from "../product-price"; // Ensure this path is correct
+import ProductPrice from "../product-price";
 import OptionSelect from "@modules/products/components/product-actions/option-select";
 import Divider from "@modules/common/components/divider";
 import LocalizedClientLink from "@modules/common/components/localized-client-link";
@@ -15,28 +15,26 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
 type ProductPreviewProps = {
   productPreview: HttpTypes.StoreProduct;
   isFeatured?: boolean;
-  region: HttpTypes.StoreRegion;
 };
 
 export default function ProductPreview({
   productPreview,
   isFeatured,
-  region,
 }: ProductPreviewProps) {
   const [options, setOptions] = useState<Record<string, string | undefined>>({});
   const [isAdding, setIsAdding] = useState(false);
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
 
   const params = useParams();
-  const countryCode = (params.countryCode as string) || "us"; // Adjust as needed
+  const countryCode = (params.countryCode as string) || "us";
 
-  // Fetch the full product data when the component mounts
+  // Fetch the full product data
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const response = await fetch(`/store/products/${productPreview.id}`);
         const data = await response.json();
-        setProduct(data.product || data); // Adjust based on your API response
+        setProduct(data.product || data);
       } catch (error) {
         console.error("Failed to fetch product:", error);
       }
@@ -45,7 +43,7 @@ export default function ProductPreview({
     fetchProduct();
   }, [productPreview.id]);
 
-  // Initialize options state based on product options
+  // Initialize options
   useEffect(() => {
     if (!product) return;
 
@@ -58,10 +56,8 @@ export default function ProductPreview({
     setOptions(initialOptions);
   }, [product]);
 
-  // Memoize variants for performance optimization
   const variants = useMemo(() => product?.variants || [], [product]);
 
-  // Create a record of variant options for easy comparison
   const variantRecord = useMemo(() => {
     const map: Record<string, Record<string, string>> = {};
 
@@ -80,7 +76,6 @@ export default function ProductPreview({
     return map;
   }, [variants]);
 
-  // Determine the selected variant based on selected options
   const selectedVariant = useMemo(() => {
     let variantId: string | undefined = undefined;
 
@@ -101,7 +96,6 @@ export default function ProductPreview({
     }
   }, [variants, variantRecord]);
 
-  // Check if the selected variant is in stock
   const inStock = useMemo(() => {
     if (!selectedVariant) return false;
 
@@ -120,7 +114,6 @@ export default function ProductPreview({
     return false;
   }, [selectedVariant]);
 
-  // Handle adding the product to the cart
   const handleAddToCart = async () => {
     if (!selectedVariant?.id) {
       console.error("No variant selected");
@@ -135,7 +128,6 @@ export default function ProductPreview({
         quantity: 1,
         countryCode,
       });
-      // Optionally, provide user feedback or refresh cart state
     } catch (error) {
       console.error("Failed to add item to cart:", error);
     } finally {
@@ -143,9 +135,8 @@ export default function ProductPreview({
     }
   };
 
-  // Return null or a loading indicator if product data is not yet available
   if (!product) {
-    return null; // Or you can return a loading spinner
+    return null;
   }
 
   return (
@@ -165,11 +156,7 @@ export default function ProductPreview({
       </LocalizedClientLink>
 
       {/* Display the product price */}
-      <ProductPrice
-        product={product}
-        variant={selectedVariant}
-        region={region}
-      />
+      <ProductPrice product={product} variant={selectedVariant} />
 
       {/* Option Selection */}
       {product.variants.length > 1 && (
