@@ -44,10 +44,9 @@ export default function ProductPreview({
   // Fetch the full product data
   useEffect(() => {
     const fetchProduct = async () => {
-      const productData = await fetch(`/store/products/${productPreview.id}`).then(
-        (res) => res.json()
-      );
-      setProduct(productData);
+      const response = await fetch(`/store/products/${productPreview.id}`);
+      const data = await response.json();
+      setProduct(data.product); // Adjust according to your API response structure
     };
 
     fetchProduct();
@@ -129,7 +128,7 @@ export default function ProductPreview({
     }
   };
 
-  if (!product) {
+  if (!product || !region) {
     return null; // Or a loading indicator
   }
 
