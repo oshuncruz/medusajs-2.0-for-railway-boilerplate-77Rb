@@ -8,10 +8,10 @@ import { useParams } from "next/navigation";
 import { getProductPrice } from "@lib/util/get-product-price";
 import Thumbnail from "../thumbnail";
 import PreviewPrice from "./price";
-import OptionSelect from "@modules/products/components/product-actions/option-select";
-import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import OptionSelect from "@modules/products/components/option-select";
 import Divider from "@modules/common/components/divider";
 import { addToCart } from "@lib/data/cart";
+import LocalizedClientLink from "@modules/common/components/localized-client-link";
 
 type ProductPreviewProps = {
   productPreview: HttpTypes.StoreProduct;
@@ -36,7 +36,7 @@ export default function ProductPreview({
     const fetchProduct = async () => {
       const response = await fetch(`/store/products/${productPreview.id}`);
       const data = await response.json();
-      setProduct(data.product); // Adjust based on your API response structure
+      setProduct(data.product || data); // Adjust based on your API response structure
     };
 
     fetchProduct();
@@ -67,7 +67,8 @@ export default function ProductPreview({
       const temp: Record<string, string> = {};
 
       for (const option of variant.options) {
-        temp[option.option_id] = option.value;
+        // Updated line to fix the error
+        temp[option.option_id || option.id] = option.value;
       }
 
       map[variant.id] = temp;
@@ -123,8 +124,8 @@ export default function ProductPreview({
 
   // Get product price
   const { cheapestPrice } = getProductPrice({
-    product: product,
-    region: region,
+    product: product!,
+    region: region!,
   });
 
   // Update options when user selects an option
