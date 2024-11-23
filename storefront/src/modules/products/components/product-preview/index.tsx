@@ -9,6 +9,7 @@ import { getProductPrice } from "@lib/util/get-product-price";
 import Thumbnail from "../thumbnail";
 import PreviewPrice from "./price";
 import OptionSelect from "@modules/products/components/product-actions/option-select";
+import LocalizedClientLink from "@modules/common/components/localized-client-link";
 import Divider from "@modules/common/components/divider";
 import { addToCart } from "@lib/data/cart";
 
