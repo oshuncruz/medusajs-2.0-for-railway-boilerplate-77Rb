@@ -6,7 +6,7 @@ import { HttpTypes } from "@medusajs/types";
 import { addToCart } from "@lib/data/cart";
 import { getProductPrice } from "@lib/util/get-product-price";
 import Thumbnail from "../thumbnail";
-import OptionSelect from "@modules/products/components/option-select";
+import OptionSelect from "@modules/products/components/product-actions/option-select";
 import Divider from "@modules/common/components/divider";
 
 type ProductPreviewProps = {
