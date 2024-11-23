@@ -50,7 +50,7 @@ export default function ProductPreview({
 
   const selectedVariant = useMemo(() => {
     return variants.find((variant) =>
-      variant.options.every((opt) => options[opt.option_id] === opt.value)
+      variant.options?.every((opt) => options[opt.option_id] === opt.value)
     );
   }, [options, variants]);
 
