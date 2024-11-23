@@ -7,7 +7,7 @@ import { isEqual } from "lodash";
 import { useParams } from "next/navigation";
 import { getProductPrice } from "@lib/util/get-product-price";
 import Thumbnail from "../thumbnail";
-import PreviewPrice from "./price";
+import ProductPrice from "../product-price";
 import OptionSelect from "@modules/products/components/product-actions/option-select";
 import Divider from "@modules/common/components/divider";
 import { addToCart } from "@lib/data/cart";
@@ -31,33 +31,38 @@ export default function ProductPreview({
   const params = useParams();
   const countryCode = (params.countryCode as string) || "us"; // Adjust as needed
 
-  // Fetch the full product data
+  // Fetch the full product data when the component mounts
   useEffect(() => {
     const fetchProduct = async () => {
-      const response = await fetch(`/store/products/${productPreview.id}`);
-      const data = await response.json();
-      setProduct(data.product || data); // Adjust based on your API response structure
+      try {
+        const response = await fetch(`/store/products/${productPreview.id}`);
+        const data = await response.json();
+        setProduct(data.product || data); // Adjust based on your API response
+      } catch (error) {
+        console.error("Failed to fetch product:", error);
+      }
     };
 
     fetchProduct();
   }, [productPreview.id]);
 
-  // Initialize option state
+  // Initialize options state based on product options
   useEffect(() => {
     if (!product) return;
 
-    const optionObj: Record<string, string | undefined> = {};
+    const initialOptions: Record<string, string | undefined> = {};
 
     for (const option of product.options || []) {
-      optionObj[option.id] = undefined;
+      initialOptions[option.id] = undefined;
     }
 
-    setOptions(optionObj);
+    setOptions(initialOptions);
   }, [product]);
 
+  // Memoize variants for performance optimization
   const variants = useMemo(() => product?.variants || [], [product]);
 
-  // Map variant options for easy comparison
+  // Create a record of variant options for easy comparison
   const variantRecord = useMemo(() => {
     const map: Record<string, Record<string, string>> = {};
 
@@ -67,7 +72,7 @@ export default function ProductPreview({
       const temp: Record<string, string> = {};
 
       for (const option of variant.options) {
-        // Updated line to fix the error
+        // Use option.id as the key
         temp[option.option_id || option.id] = option.value;
       }
 
@@ -77,7 +82,7 @@ export default function ProductPreview({
     return map;
   }, [variants]);
 
-  // Determine selected variant
+  // Determine the selected variant based on selected options
   const selectedVariant = useMemo(() => {
     let variantId: string | undefined = undefined;
 
@@ -98,7 +103,7 @@ export default function ProductPreview({
     }
   }, [variants, variantRecord]);
 
-  // Determine if the variant is in stock
+  // Check if the selected variant is in stock
   const inStock = useMemo(() => {
     if (!selectedVariant) return false;
 
@@ -117,22 +122,7 @@ export default function ProductPreview({
     return false;
   }, [selectedVariant]);
 
-  // Handle early return if product data is not available
-  if (!product) {
-    return null; // Or a loading indicator
-  }
-
-  // Get product price
-  const { cheapestPrice } = getProductPrice({
-    product: pricedProduct,
-    region,
-  });
-  
-  // Update options when user selects an option
-  const updateOptions = (update: Record<string, string | undefined>) => {
-    setOptions({ ...options, ...update });
-  };
-
+  // Handle adding the product to the cart
   const handleAddToCart = async () => {
     if (!selectedVariant?.id) {
       console.error("No variant selected");
@@ -155,6 +145,11 @@ export default function ProductPreview({
     }
   };
 
+  // Return null or a loading indicator if product data is not yet available
+  if (!product) {
+    return null; // Or you can return a loading spinner
+  }
+
   return (
     <div className="group">
       {/* Product Thumbnail and Basic Info */}
@@ -167,28 +162,33 @@ export default function ProductPreview({
           />
           <div className="flex txt-compact-medium mt-4 justify-between">
             <Text className="text-ui-fg-subtle">{productPreview.title}</Text>
-            <div className="flex items-center gap-x-2">
-              {cheapestPrice && <PreviewPrice price={cheapestPrice} />}
-            </div>
           </div>
         </div>
       </LocalizedClientLink>
 
+      {/* Display the product price */}
+      <ProductPrice
+        product={product}
+        variant={selectedVariant}
+        region={region}
+      />
+
       {/* Option Selection */}
       {product.variants.length > 1 && (
         <div className="flex flex-col gap-y-4 mt-4">
-          {(product.options || []).map((option) => {
-            return (
-              <div key={option.id}>
-                <OptionSelect
-                  option={option}
-                  current={options[option.id]}
-                  updateOption={updateOptions}
-                  title={option.title}
-                />
-              </div>
-            );
-          })}
+          {(product.options || []).map((option) => (
+            <div key={option.id}>
+              <OptionSelect
+                option={option}
+                current={options[option.id]}
+                updateOption={(value) =>
+                  setOptions((prev) => ({ ...prev, [option.id]: value }))
+                }
+                title={option.title}
+                disabled={isAdding}
+              />
+            </div>
+          ))}
           <Divider />
         </div>
       )}
