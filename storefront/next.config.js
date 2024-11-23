@@ -29,6 +29,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "medusa-server-testing.s3.us-east-1.amazonaws.com",
       },
+      {
+        protocol: 'https',
+        hostname: 'clothesrewear.s3.us-east-2.amazonaws.com',
+      },
       ...(process.env.NEXT_PUBLIC_MINIO_ENDPOINT ? [{
         protocol: "https",
         hostname: process.env.NEXT_PUBLIC_MINIO_ENDPOINT,
