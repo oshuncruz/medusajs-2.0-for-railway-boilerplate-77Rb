@@ -34,7 +34,10 @@ export default function ProductPreview({
       try {
         const response = await fetch(`/store/products/${productPreview.id}`);
         const data = await response.json();
-        setProduct(data.product || data);
+        setProduct({
+          ...data.product,
+          variants: data.product.variants || [],
+        });
       } catch (error) {
         console.error("Failed to fetch product:", error);
       }
@@ -159,7 +162,7 @@ export default function ProductPreview({
       <ProductPrice product={product} variant={selectedVariant} />
 
       {/* Option Selection */}
-      {product.variants?.length > 1 && (
+      {(product.variants?.length ?? 0) > 1 && (
         <div className="flex flex-col gap-y-4 mt-4">
           {(product.options || []).map((option) => (
             <div key={option.id}>
