@@ -1,8 +1,9 @@
-import dynamic from "next/dynamic";
-import { getProductsList } from "@lib/data/products";
-import { HttpTypes } from "@medusajs/types";
+import dynamic from 'next/dynamic';
+import { getRegion } from '@lib/data/regions';
+import { getProductsList } from '@lib/data/products';
+import { HttpTypes } from '@medusajs/types';
 
-const Product = dynamic(() => import("../product-preview"), {
+const Product = dynamic(() => import('../product-preview'), {
   ssr: false,
 });
 
@@ -23,6 +24,12 @@ export default async function RelatedProducts({
   product,
   countryCode,
 }: RelatedProductsProps) {
+  const region = await getRegion(countryCode);
+
+  if (!region) {
+    return null;
+  }
+
   // Define your related products logic
   const queryParams: StoreProductParamsWithTags = {};
   if (product.collection_id) {
@@ -63,7 +70,7 @@ export default async function RelatedProducts({
       <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
         {products.map((product) => (
           <li key={product.id}>
-            <Product productPreview={product} />
+            <Product productPreview={product} region={region} />
           </li>
         ))}
       </ul>

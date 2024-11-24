@@ -1,32 +1,34 @@
 'use client';
 
-import { useState, useEffect, useMemo } from "react";
-import { Text, Button } from "@medusajs/ui";
-import { HttpTypes } from "@medusajs/types";
-import { isEqual } from "lodash";
-import { useParams } from "next/navigation";
-import { addToCart } from "@lib/data/cart";
-import Thumbnail from "../thumbnail";
-import ProductPrice from "../product-price";
-import OptionSelect from "@modules/products/components/product-actions/option-select";
-import Divider from "@modules/common/components/divider";
-import LocalizedClientLink from "@modules/common/components/localized-client-link";
+import { useState, useEffect, useMemo } from 'react';
+import { Text, Button } from '@medusajs/ui';
+import { HttpTypes } from '@medusajs/types';
+import { isEqual } from 'lodash';
+import { useParams } from 'next/navigation';
+import { addToCart } from '@lib/data/cart';
+import Thumbnail from '../thumbnail';
+import ProductPrice from '../product-price';
+import OptionSelect from '@modules/products/components/product-actions/option-select';
+import Divider from '@modules/common/components/divider';
+import LocalizedClientLink from '@modules/common/components/localized-client-link';
 
 type ProductPreviewProps = {
   productPreview: HttpTypes.StoreProduct;
   isFeatured?: boolean;
+  region: HttpTypes.StoreRegion; // Added 'region' to props
 };
 
 export default function ProductPreview({
   productPreview,
   isFeatured,
+  region,
 }: ProductPreviewProps) {
   const [options, setOptions] = useState<Record<string, string | undefined>>({});
   const [isAdding, setIsAdding] = useState(false);
   const [product, setProduct] = useState<HttpTypes.StoreProduct | null>(null);
 
   const params = useParams();
-  const countryCode = (params.countryCode as string) || "us";
+  const countryCode = (params.countryCode as string) || 'us';
 
   // Fetch the full product data
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function ProductPreview({
           variants: data.product.variants || [],
         });
       } catch (error) {
-        console.error("Failed to fetch product:", error);
+        console.error('Failed to fetch product:', error);
       }
     };
 
@@ -119,7 +121,7 @@ export default function ProductPreview({
 
   const handleAddToCart = async () => {
     if (!selectedVariant?.id) {
-      console.error("No variant selected");
+      console.error('No variant selected');
       return;
     }
 
@@ -132,7 +134,7 @@ export default function ProductPreview({
         countryCode,
       });
     } catch (error) {
-      console.error("Failed to add item to cart:", error);
+      console.error('Failed to add item to cart:', error);
     } finally {
       setIsAdding(false);
     }
@@ -159,7 +161,7 @@ export default function ProductPreview({
       </LocalizedClientLink>
 
       {/* Display the product price */}
-      <ProductPrice product={product} variant={selectedVariant} />
+      <ProductPrice product={product} variant={selectedVariant} region={region} />
 
       {/* Option Selection */}
       {(product.variants?.length ?? 0) > 1 && (
@@ -190,10 +192,10 @@ export default function ProductPreview({
         isLoading={isAdding}
       >
         {!selectedVariant
-          ? "Select variant"
+          ? 'Select variant'
           : !inStock
-          ? "Out of stock"
-          : "Add to cart"}
+          ? 'Out of stock'
+          : 'Add to cart'}
       </Button>
     </div>
   );
