@@ -1,5 +1,8 @@
 // product-preview/index.tsx
 
+
+'use client';
+
 import { useState, useEffect, useMemo } from "react";
 import { Text, Button } from "@medusajs/ui";
 import { HttpTypes } from "@medusajs/types";
