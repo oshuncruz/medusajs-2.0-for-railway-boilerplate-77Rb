@@ -1,6 +1,3 @@
-// product-preview/index.tsx
-
-
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -162,7 +159,7 @@ export default function ProductPreview({
       <ProductPrice product={product} variant={selectedVariant} />
 
       {/* Option Selection */}
-      {product.variants.length > 1 && (
+      {product.variants?.length > 1 && (
         <div className="flex flex-col gap-y-4 mt-4">
           {(product.options || []).map((option) => (
             <div key={option.id}>
