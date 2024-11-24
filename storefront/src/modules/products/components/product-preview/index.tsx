@@ -127,7 +127,7 @@ export default function ProductPreview({
       </LocalizedClientLink>
 
       {/* Display the product price */}
-      <ProductPrice product={product} variant={selectedVariant} region={region} />
+      <ProductPrice product={product} variant={selectedVariant} />
 
       {/* Option Selection */}
       {(product.variants?.length ?? 0) > 1 && (
